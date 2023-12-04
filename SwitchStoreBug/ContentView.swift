@@ -47,7 +47,8 @@ struct ParentView: View {
     }
 }
 
-struct ParentFeature: Reducer {
+@Reducer
+struct ParentFeature {
     struct State: Equatable, Sendable {
         @BindingState var buttonState: Bool = true
         var content: ChildFeature.State?
@@ -84,10 +85,14 @@ struct ParentFeature: Reducer {
                 return .none
             }
         }
+        .ifLet(\.content, action: \.content) {
+            ChildFeature()
+        }
     }
 }
 
-struct ChildFeature: Reducer {
+@Reducer
+struct ChildFeature {
     enum State: Equatable, Sendable {
         case red(RedFeature.State)
         case blue(BlueFeature.State)
@@ -134,7 +139,8 @@ struct RedView: View {
     }
 }
 
-struct RedFeature: Reducer {
+@Reducer
+struct RedFeature {
         struct State: Equatable, Sendable {
             var text: String?
         }
@@ -173,7 +179,8 @@ struct BlueView: View {
     }
 }
 
-struct BlueFeature: Reducer {
+@Reducer
+struct BlueFeature {
         struct State: Equatable, Sendable {
             var text: String?
         }
