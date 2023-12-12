@@ -2,55 +2,47 @@ import SwiftUI
 import ComposableArchitecture
 
 struct ParentView: View {
-    let store: StoreOf<ParentFeature>
+    @Bindable var store: StoreOf<ParentFeature>
     var body: some View {
-        WithViewStore(self.store, observe: { $0 }) { viewStore in
-            VStack {
-                IfLetStore(self.store.scope(state: \.content, action: { .content($0) }), then: { store in
-                    SwitchStore(store) { state in
-                        switch state {
-                        case .red:
-                            CaseLet(
-                                /ChildFeature.State.red,
-                                action: ChildFeature.Action.red
-                            ) { store in
-                                RedView(store: store)
-                            }
-                        case .blue:
-                            CaseLet(
-                                /ChildFeature.State.blue,
-                                action: ChildFeature.Action.blue
-                            ) { store in
-                                BlueView(store: store)
-                            }
-                        }
+        VStack {
+            
+            if let childStore = self.store.scope(state: \.content, action: \.content) {
+                switch childStore.state {
+                case .red:
+                    if let store = childStore.scope(state: \.red, action: \.red) {
+                        RedView(store: store)
                     }
-                })
-                
-                Button {
-                    viewStore.send(.onButtonTapped)
-                } label: {
-                    VStack {
-                        Text("Button")
-                            .foregroundColor(.white)
+                case .blue:
+                    if let store = childStore.scope(state: \.blue, action: \.blue) {
+                        BlueView(store: store)
                     }
-                    .padding()
-                    .background(Color.red)
-                    .cornerRadius(10)
                 }
-                
             }
-            .onChange(of: viewStore.buttonState) { _, _ in
-                viewStore.send(.updateContent)
+            
+            Button {
+                self.store.send(.onButtonTapped)
+            } label: {
+                VStack {
+                    Text("Button")
+                        .foregroundColor(.white)
+                }
+                .padding()
+                .background(Color.red)
+                .cornerRadius(10)
             }
+            
+        }
+        .onChange(of: self.store.buttonState) { _, _ in
+            self.store.send(.updateContent)
         }
     }
 }
 
 @Reducer
 struct ParentFeature {
+    @ObservableState
     struct State: Equatable, Sendable {
-        @BindingState var buttonState: Bool = true
+        var buttonState: Bool = true
         var content: ChildFeature.State?
     }
     enum Action: Equatable, Sendable, BindableAction {
@@ -93,6 +85,7 @@ struct ParentFeature {
 
 @Reducer
 struct ChildFeature {
+    @ObservableState
     enum State: Equatable, Sendable {
         case red(RedFeature.State)
         case blue(BlueFeature.State)
@@ -122,82 +115,81 @@ struct ChildFeature {
 struct RedView: View {
     let store: StoreOf<RedFeature>
     var body: some View {
-        WithViewStore(self.store, observe: { $0 }) { viewStore in
-            VStack {
-                Text("RedView")
-                
-                if let text = viewStore.text {
-                    Text(text)
-                }
-                
+        VStack {
+            Text("RedView")
+            
+            if let text = self.store.text {
+                Text(text)
             }
-            .task {
-                print("RedView onAppear")
-                viewStore.send(.onAppear)
-            }
+            
         }
+        .task {
+            print("RedView onAppear")
+            self.store.send(.onAppear)
+        }
+        
     }
 }
 
 @Reducer
 struct RedFeature {
-        struct State: Equatable, Sendable {
-            var text: String?
-        }
-        enum Action: Equatable, Sendable {
-            case onAppear
-        }
-       
-        var body: some Reducer<State, Action> {
-            Reduce { state, action in
-                switch action {
-
-                case .onAppear:
-                    state.text = "RedView On appear ran"
-                    return .none
-                }
+    @ObservableState
+    struct State: Equatable, Sendable {
+        var text: String?
+    }
+    enum Action: Equatable, Sendable {
+        case onAppear
+    }
+    
+    var body: some Reducer<State, Action> {
+        Reduce { state, action in
+            switch action {
+                
+            case .onAppear:
+                state.text = "RedView On appear ran"
+                return .none
             }
         }
+    }
 }
 
 struct BlueView: View {
     let store: StoreOf<BlueFeature>
     var body: some View {
-        WithViewStore(self.store, observe: { $0 }) { viewStore in
-            VStack {
-                Text("BlueView")
-                
-                if let text = viewStore.text {
-                    Text(text)
-                }
+        VStack {
+            Text("BlueView")
+            
+            if let text = self.store.text {
+                Text(text)
             }
-            .task {
-                print("BlueView onAppear")
-                viewStore.send(.onAppear)
-            }
+        }
+        .task {
+            print("BlueView onAppear")
+            self.store.send(.onAppear)
         }
     }
 }
 
 @Reducer
 struct BlueFeature {
-        struct State: Equatable, Sendable {
-            var text: String?
-        }
-        enum Action: Equatable, Sendable {
-            case onAppear
-        }
-       
-        var body: some Reducer<State, Action> {
-            Reduce { state, action in
-                switch action {
-                case .onAppear:
-                    state.text = "BlueView On appear ran"
-                    return .none
-                    
-                }
+    @ObservableState
+    struct State: Equatable, Sendable {
+        var text: String?
+    }
+    enum Action: Equatable, Sendable {
+        case onAppear
+    }
+    
+    var body: some Reducer<State, Action> {
+        Reduce { state, action in
+            switch action {
+            case .onAppear:
+                state.text = "BlueView On appear ran"
+                return .none
+                
             }
         }
+    }
 }
 
 #Preview {
